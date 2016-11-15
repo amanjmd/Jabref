@@ -1,14 +1,13 @@
 #/bin/bash
 #based on http://www.creative-doing.de/category/oracle-database/article/install-oracle-11gr2-express-edition-ubuntu-1404-64-bit
-pwd
 cd /tmp
 
 # install ojdbc6.jar
 wget https://files.jabref.org/test/ojdbc6.jar.enc
 openssl aes-256-cbc -K $encrypted_2ff94d367f50_key -iv $encrypted_2ff94d367f50_iv -in ojdbc6.jar.enc -out ojdbc6.jar -d
-cp ojdbc6.jar /home/travis/JabRef/jabref/lib
-rm -rf /home/travis/JabRef/jabref/src/main/oracleMock
-mkdir /home/travis/JabRef/jabref/src/main/oracleMock
+cp ojdbc6.jar /home/travis/build/JabRef/jabref/lib
+rm -rf /home/travis/JabRef/build/jabref/src/main/oracleMock
+mkdir /home/travis/JabRef/build/jabref/src/main/oracleMock
 
 # install oracle XE
 
