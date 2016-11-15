@@ -11,7 +11,7 @@ mkdir /home/travis/JabRef/build/jabref/src/main/oracleMock
 
 # install oracle XE
 
-cat <<EOF | sudo tee /sbin/chkconfig > /dev/null
+cat  <<EOF > /tmp/x
 #!/bin/bash
 # Oracle 11gR2 XE installer chkconfig hack for Ubuntu
 file=/etc/init.d/oracle-xe
@@ -28,15 +28,17 @@ echo '### END INIT INFO' >> $file
 fi
 update-rc.d oracle-xe defaults 80 01
 EOF
+cat /tmp/x | sudo tee /sbin/chkconfig > /dev/null
 sudo chmod 755 /sbin/chkconfig
 
-cat <<EOF | sudo tee /etc/sysctl.d/60-oracle.conf > /dev/null
+cat <<EOF > /tmp/x
 # Oracle 11g XE kernel parameters
 fs.file-max=6815744
 net.ipv4.ip_local_port_range=9000 65000
 kernel.sem=250 32000 100 128
 kernel.shmmax=536870912
 EOF
+cat /tmp/x | sudo tee /etc/sysctl.d/60-oracle.conf > /dev/null
 
 sudo service procps start
 sudo ln -s /usr/bin/awk /bin/awk
@@ -44,7 +46,7 @@ sudo rm -rf /dev/shm
 sudo mkdir /dev/shm
 sudo mount -t tmpfs shmfs -o size=2048m /dev/shm
 
-cat <<EOF | sudo tee /etc/rc2.d/S10oracle-mount > /dev/null
+cat <<EOF > /tmp/x
 #! /bin/sh
 ### BEGIN INIT INFO
 # Provides:          Creates Oracle mount point
@@ -72,6 +74,7 @@ case "$1" in
 esac
 exit 0
 EOF
+cat /tmp/x | sudo tee /etc/rc2.d/S10oracle-mount > /dev/null
 sudo chmod 755 /etc/rc2.d/S10oracle-mount
 
 sudo mkdir /var/lock/subsys
