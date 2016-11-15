@@ -1,5 +1,6 @@
 #/bin/bash
 #based on http://www.creative-doing.de/category/oracle-database/article/install-oracle-11gr2-express-edition-ubuntu-1404-64-bit
+pwd
 cd /tmp
 
 # install ojdbc6.jar

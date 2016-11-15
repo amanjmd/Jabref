@@ -34,7 +34,7 @@ before_script:
   - mysql -u root -e 'create database jabref'
 
 script:
-  - scripts/install-oracle-express.sh
+  - bash -x scripts/install-oracle-express.sh
   - ./gradlew databaseTest
 
 before_cache:
