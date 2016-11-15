@@ -34,41 +34,9 @@ before_script:
   - mysql -u root -e 'create database jabref'
 
 script:
-  - ./gradlew check
   - scripts/install-oracle-express.sh
   - ./gradlew databaseTest
-  # Prepare integration tests
-  - "export DISPLAY=:99.0"
-  - "sh -e /etc/init.d/xvfb start"
-  - sleep 3 # give xvfb some time to start
-  # no need for databases for the integrationTest -> save memory
-  - sudo service mysql stop
-  - sudo service postgresql stop
-  # following services identified by "sudo service --status-all" do not need to run, too
-  # excluded: rsyslog (feels wrong), udev (feels wrong), friendly-recovery ("Unkonwn instance" error)
-  - sudo service acpid stop
-  - sudo service atd stop
-  - sudo service cron stop
-  - sudo service memcached stop
-  - sudo service ntp stop
-  - sudo service rabbitmq-server stop
-  - sudo service resolvconf stop
-  - sudo service sshguard stop
-  - sudo service ssh stop
-  # Integratation tests run in a timeout. Just start them and kill them after 60s
-  - timeout 60 ./gradlew integrationTest --info || true
 
-after_script:
-  # enable codecov report
-  - ./gradlew jacocoTestReport
-  - bash <(curl -s https://codecov.io/bash)
-
-after_failure:
-  # show test results if build fails
-  - $TRAVIS_BUILD_DIR/scripts/after-failure.sh
-
-# cache gradle dependencies
-# https://docs.travis-ci.com/user/languages/java#Caching
 before_cache:
   - rm -f $HOME/.gradle/caches/modules-2/modules-2.lock
 cache:
