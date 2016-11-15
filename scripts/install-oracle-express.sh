@@ -1,12 +1,24 @@
 #/bin/bash
+
+# ensure that downloads directory exists
+if [ ! -d ~/downloads ]; then
+  mkdir ~/downloads
+fi
+
+# ensure that tar archive of install4j exists
+cd ~/downloads
+if [ ! -f oracle.tar ]; then
+  #uncrypt all
+  #everything in one archive, because of https://docs.travis-ci.com/user/encrypting-files/#Encrypting-multiple-files
+  wget https://files.jabref.org/test/oracle.tar.enc
+  openssl aes-256-cbc -K $encrypted_6dada5596485_key -iv $encrypted_6dada5596485_iv -in oracle.tar.enc -out oracle.tar -d
+  rm orcale.tar.enc
+fi;
+
 #based on http://www.creative-doing.de/category/oracle-database/article/install-oracle-11gr2-express-edition-ubuntu-1404-64-bit
 cd /tmp
 
-#uncrypt all
-#everything in one archive, because of https://docs.travis-ci.com/user/encrypting-files/#Encrypting-multiple-files
-wget https://files.jabref.org/test/oracle.tar.enc
-openssl aes-256-cbc -K $encrypted_6dada5596485_key -iv $encrypted_6dada5596485_iv -in oracle.tar.enc -out oracle.tar -d
-tar xf oracle.tar
+tar xf ~/downloads/oracle.tar
 
 # install ojdbc6.jar
 cp ojdbc6.jar /home/travis/build/JabRef/jabref/lib
