@@ -4,7 +4,7 @@ cd /tmp
 
 # install ojdbc6.jar
 wget https://files.jabref.org/test/ojdbc6.jar.enc
-openssl aes-256-cbc -K $encrypted_2ff94d367f50_key -iv $encrypted_2ff94d367f50_iv -in ojdbc6.jar.enc -out ojdbc6.jar -d
+openssl aes-256-cbc -K $encrypted_6dada5596485_key -iv $encrypted_6dada5596485_iv -in ojdbc6.jar.enc -out ojdbc6.jar -d
 cp ojdbc6.jar /home/travis/build/JabRef/jabref/lib
 rm -rf /home/travis/JabRef/build/JabRef/jabref/src/main/oracleMock
 mkdir /home/travis/JabRef/build/JabRef/jabref/src/main/oracleMock
