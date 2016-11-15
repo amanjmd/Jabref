@@ -2,9 +2,13 @@
 #based on http://www.creative-doing.de/category/oracle-database/article/install-oracle-11gr2-express-edition-ubuntu-1404-64-bit
 cd /tmp
 
+#uncrypt all
+#everything in one archive, because of https://docs.travis-ci.com/user/encrypting-files/#Encrypting-multiple-files
+wget https://files.jabref.org/test/oracle.tar.enc
+openssl aes-256-cbc -K $encrypted_6dada5596485_key -iv $encrypted_6dada5596485_iv -in oracle.tar.enc -out oracle.tar -d
+tar xf oracle.tar
+
 # install ojdbc6.jar
-wget https://files.jabref.org/test/ojdbc6.jar.enc
-openssl aes-256-cbc -K $encrypted_6dada5596485_key -iv $encrypted_6dada5596485_iv -in ojdbc6.jar.enc -out ojdbc6.jar -d
 cp ojdbc6.jar /home/travis/build/JabRef/jabref/lib
 rm -rf /home/travis/JabRef/build/JabRef/jabref/src/main/oracleMock
 mkdir /home/travis/JabRef/build/JabRef/jabref/src/main/oracleMock
@@ -80,7 +84,5 @@ sudo chmod 755 /etc/rc2.d/S10oracle-mount
 sudo mkdir /var/lock/subsys
 sudo touch /var/lock/subsys/listener
 
-wget https://files.jabref.org/test/oracle-xe_11.2.0-2_amd64.deb.enc
- openssl aes-256-cbc -K $encrypted_2ff94d367f50_key -iv $encrypted_2ff94d367f50_iv -in oracle-xe_11.2.0-2_amd64.deb.enc -out oracle-xe_11.2.0-2_amd64.deb -d
 sudo dpkg -i oracle-xe_11.2.0-2_amd64.deb
 sudo /etc/init.d/oracle-xe start
