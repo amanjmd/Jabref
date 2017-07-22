@@ -1,0 +1,69 @@
+version: 2
+jobs:
+  prepareInstall4J:
+    docker:
+      - image: circleci/openjdk:8u121-jdk
+    steps:
+      - checkout
+      - restore_cache:
+        key: install4j-cache
+      # update locally with:
+      # openssl aes-256-cbc -e -in ./buildres/jabref-cert-2016.p12 -out jabref-cert-2016.p12.enc -k {PASSWORD}
+      - run: install4j6/bin/install4jc --verbose --license=$INSTALL4J_KEY --win-keystore-password $CERTIFICATE_PW --mac-keystore-password $CERTIFICATE_PW
+      - run: openssl aes-256-cbc -d -in ./buildres/jabref-cert-2016.p12.enc -out ./buildres/jabref-cert-2016.p12 -k $CERTIFICATE
+      - run: scripts/prepare-install4j.sh
+      - save_cache:
+        key: install4j-cache
+        paths:
+          - "~/downloads"
+          - "~/.install4j6"
+
+  buildDev:
+    requires:
+      - prepareInstall4J
+    docker:
+      - image: circleci/openjdk:8u121-jdk
+    steps:
+      - restore_cache:
+        keys:
+          - dependency-cache
+      - run: ./gradlew -Pdev=true -Pinstall4jDir="install4j6" release --stacktrace
+      - save_cache:
+        key: dependency-cache
+        paths:
+          - "~/.gradle"
+      - store_artifacts:
+        path: build/releases
+        destination: build
+    deploy:
+      command: scripts/upload-to-builds.jabref.org.sh
+
+  buildRelease:
+    requires:
+      - prepareInstall4J
+    filters:
+      branches:
+        only: "circleci20"
+    docker:
+      - image: circleci/openjdk:8u121-jdk
+    steps:
+      - restore_cache:
+        keys:
+          - dependency-cache
+      - run: echo "the tag: $CIRCLE_TAG"
+      - run: |
+        set -eu
+        if [[ "x$CIRCLE_TAG" != "x" ]]; then
+          ./gradlew -Pinstall4jDir="install4j6" release --stacktrace
+        fi
+      - store_artifacts:
+        path: build/releases
+        destination: releases
+    deploy:
+      command: scripts/upload-to-builds.jabref.org.sh
+
+  build:
+    requires:
+      - buildDev
+      - buildRelease
+
