@@ -53,6 +53,7 @@ jobs:
 
   build:
     requires:
+      - buildDev
       - buildRelease
     docker:
       - image: circleci/openjdk:8-jdk
