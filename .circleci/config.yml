@@ -51,11 +51,15 @@ jobs:
     deploy:
       command: scripts/upload-to-builds.jabref.org.sh
 
+workflows:
+  version: 2
+
   build:
-    requires:
-      - buildDev
-      - buildRelease
-    docker:
-      - image: circleci/openjdk:8-jdk
-    steps:
-      - run: echo "Finished"
+    jobs:
+      - prepareInstall4J
+      - buildDev:
+          requires:
+            - prepareInstall4J
+      - buildRelease:
+          requires:
+            - prepareInstall4J
