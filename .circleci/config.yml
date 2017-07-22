@@ -38,32 +38,10 @@ jobs:
     deploy:
       command: scripts/upload-to-builds.jabref.org.sh
 
-  buildRelease:
+  build:
     requires:
-      - prepareInstall4J
-    filters:
-      branches:
-        only: "circleci20"
+      - buildRelease
     docker:
       - image: circleci/openjdk:8u121-jdk
     steps:
-      - restore_cache:
-        keys:
-          - dependency-cache
-      - run: echo "the tag: $CIRCLE_TAG"
-      - run: |
-        set -eu
-        if [[ "x$CIRCLE_TAG" != "x" ]]; then
-          ./gradlew -Pinstall4jDir="install4j6" release --stacktrace
-        fi
-      - store_artifacts:
-        path: build/releases
-        destination: releases
-    deploy:
-      command: scripts/upload-to-builds.jabref.org.sh
-
-  build:
-    requires:
-      - buildDev
-      - buildRelease
-
+      - run: echo "Finished"
