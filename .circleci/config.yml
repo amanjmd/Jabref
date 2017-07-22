@@ -2,7 +2,7 @@ version: 2
 jobs:
   prepareInstall4J:
     docker:
-      - image: circleci/openjdk:8u121-jdk
+      - image: circleci/openjdk:8-jdk
     steps:
       - checkout
       - restore_cache:
@@ -22,7 +22,7 @@ jobs:
     requires:
       - prepareInstall4J
     docker:
-      - image: circleci/openjdk:8u121-jdk
+      - image: circleci/openjdk:8-jdk
     steps:
       - restore_cache:
         keys:
@@ -38,10 +38,23 @@ jobs:
     deploy:
       command: scripts/upload-to-builds.jabref.org.sh
 
+  buildRelease:
+    requires:
+      - prepareInstall4J
+    filters:
+      branches:
+        only: "circleci20"
+    docker:
+      - image: circleci/openjdk:8-jdk
+    steps:
+      - run: echo "Finished build release"
+    deploy:
+      command: scripts/upload-to-builds.jabref.org.sh
+
   build:
     requires:
       - buildRelease
     docker:
-      - image: circleci/openjdk:8u121-jdk
+      - image: circleci/openjdk:8-jdk
     steps:
       - run: echo "Finished"
