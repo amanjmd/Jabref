@@ -39,6 +39,7 @@ jobs:
             - dependency-cache
             - install4j-cache
       - checkout
+      - run: echo "something"
     deploy:
       command: scripts/upload-to-builds.jabref.org.sh
 
