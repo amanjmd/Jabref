@@ -14,22 +14,21 @@ jobs:
       - run: scripts/prepare-install4j.sh
       - save_cache:
           key: install4j-cache
-        paths:
-          - "~/downloads"
-          - "~/.install4j6"
+          paths:
+            - "~/downloads"
+            - "~/.install4j6"
 
   buildDev:
     docker:
       - image: circleci/openjdk:8-jdk
     steps:
       - restore_cache:
-        keys:
-          - dependency-cache
+          key: dependency-cache
       - run: ./gradlew -Pdev=true -Pinstall4jDir="install4j6" release --stacktrace
       - save_cache:
-        key: dependency-cache
-        paths:
-          - "~/.gradle"
+          key: dependency-cache
+          paths:
+            - "~/.gradle"
       - store_artifacts:
         path: build/releases
         destination: build
