@@ -10,6 +10,8 @@ plugins {
     id "com.simonharrer.modernizer" version '1.5.0-1'
     id 'me.champeau.gradle.jmh' version '0.4.3'
     id 'net.ltgt.errorprone' version '0.0.11'
+    id 'nebula.ospackage' version '4.4.0'
+    id 'nebula.ospackage-application' version '4.4.0'
 }
 
 // use the gradle build scan feature: https://scans.gradle.com/get-started
@@ -25,6 +27,7 @@ apply plugin: 'jacoco'
 apply plugin: 'install4j'
 apply plugin: 'me.champeau.gradle.jmh'
 apply plugin: 'checkstyle'
+apply plugin: 'nebula.deb'
 
 apply from: 'eclipse.gradle'
 apply from: 'localization.gradle'
@@ -385,6 +388,17 @@ task releaseJar(dependsOn: "shadowJar") {
 
 task snapJar(dependsOn: "releaseJar", type: Delete) {
     delete fileTree(dir: "$buildDir/releases/", exclude: "JabRef-${project.version}.jar")
+}
+
+ospackage_application {
+    prefix = '/usr/local'
+	applicationName = 'jabref'
+}
+
+ospackage {
+    packageName = 'jabref'
+    release = 1
+    requires('openjfx')
 }
 
 jmh {
