@@ -13,8 +13,10 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -71,6 +73,7 @@ import org.jabref.logic.bibtexkeypattern.BibtexKeyPatternUtil;
 import org.jabref.logic.help.HelpFile;
 import org.jabref.logic.importer.EntryBasedFetcher;
 import org.jabref.logic.importer.WebFetchers;
+import org.jabref.logic.integrity.BracesCorrector;
 import org.jabref.logic.l10n.Localization;
 import org.jabref.logic.search.SearchQueryHighlightListener;
 import org.jabref.logic.util.OS;
@@ -87,6 +90,7 @@ import com.google.common.eventbus.Subscribe;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.fxmisc.easybind.EasyBind;
+
 
 /**
  * GUI component that allows editing of the fields of a BibEntry (i.e. the
@@ -238,7 +242,7 @@ public class EntryEditor extends JPanel implements EntryContainer {
         boolean isOtherFieldsTabSelected = false;
 
         // find tab index and selection status
-        for (Tab tab: tabbed.getTabs()) {
+        for (Tab tab : tabbed.getTabs()) {
             if (tab instanceof OtherFieldsTab) {
                 index = tabbed.getTabs().indexOf(tab);
                 isOtherFieldsTabSelected = tabbed.getSelectionModel().isSelected(index);
@@ -311,6 +315,10 @@ public class EntryEditor extends JPanel implements EntryContainer {
                 }
             }
         });
+    }
+
+    public void close() {
+        closeAction.actionPerformed(null);
     }
 
     private void addTabs(String lastTabName) {
@@ -627,7 +635,6 @@ public class EntryEditor extends JPanel implements EntryContainer {
     }
 
     private class CloseAction extends AbstractAction {
-
         private CloseAction() {
             super(Localization.lang("Close window"), IconTheme.JabRefIcon.CLOSE.getSmallIcon());
             putValue(Action.SHORT_DESCRIPTION, Localization.lang("Close window"));
@@ -635,6 +642,15 @@ public class EntryEditor extends JPanel implements EntryContainer {
 
         @Override
         public void actionPerformed(ActionEvent e) {
+            Map<String,String> cleanedEntries = entry
+                    .getFieldMap()
+                    .entrySet()
+                    .stream()
+                    .collect(Collectors.toMap(Map.Entry::getKey, f -> BracesCorrector.apply(f.getValue())));
+            if (!cleanedEntries.equals(entry.getFieldMap())) {
+                frame.output(Localization.lang("Added missing braces."));
+            }
+            entry.setField(cleanedEntries);
             panel.entryEditorClosing(EntryEditor.this);
         }
     }
@@ -866,7 +882,7 @@ public class EntryEditor extends JPanel implements EntryContainer {
             }
 
             BibtexKeyPatternUtil.makeAndSetLabel(panel.getBibDatabaseContext().getMetaData()
-                    .getCiteKeyPattern(Globals.prefs.getBibtexKeyPatternPreferences().getKeyPattern()),
+                            .getCiteKeyPattern(Globals.prefs.getBibtexKeyPatternPreferences().getKeyPattern()),
                     panel.getDatabase(), entry,
                     Globals.prefs.getBibtexKeyPatternPreferences());
 
@@ -891,7 +907,7 @@ public class EntryEditor extends JPanel implements EntryContainer {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            panel.runCommand(Actions.UNDO);
+            DefaultTaskExecutor.runInJavaFXThread(() -> panel.runCommand(Actions.UNDO));
         }
     }
 
@@ -913,7 +929,8 @@ public class EntryEditor extends JPanel implements EntryContainer {
         private AutoLinkAction() {
             putValue(Action.SMALL_ICON, IconTheme.JabRefIcon.AUTO_FILE_LINK.getIcon());
             putValue(Action.SHORT_DESCRIPTION,
-                    Localization.lang("Automatically set file links for this entry") + " (Alt-F)");
+                    Localization.lang("Automatically set file links for this entry") +
+                            Globals.getKeyPrefs().get(KeyBinding.AUTOMATICALLY_LINK_FILES).map(b -> " (" + b + ")").orElse(""));
         }
 
         @Override
