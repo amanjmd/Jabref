@@ -12,6 +12,7 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.ScrollPane.ScrollBarPolicy;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
@@ -28,6 +29,7 @@ import org.jabref.gui.fieldeditors.FieldNameLabel;
 import org.jabref.logic.l10n.Localization;
 import org.jabref.model.EntryTypes;
 import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.database.BibDatabaseMode;
 import org.jabref.model.entry.BibEntry;
 import org.jabref.model.entry.EntryType;
 import org.jabref.model.entry.FieldName;
@@ -40,16 +42,22 @@ import org.jabref.model.entry.InternalBibtexFields;
 abstract class FieldsEditorTab extends EntryEditorTab {
 
     private final Map<String, FieldEditorFX> editors = new LinkedHashMap<>();
-    private final boolean isCompressed;
+    protected EntryEditorInfo info;
+    private BibEntry currentEntry;
+    private boolean isCompressed;
     private final SuggestionProviders suggestionProviders;
 
     private FieldEditorFX activeField;
     private final BibDatabaseContext databaseContext;
 
-    public FieldsEditorTab(boolean compressed, BibDatabaseContext databaseContext, SuggestionProviders suggestionProviders) {
-        this.isCompressed = compressed;
-        this.databaseContext = databaseContext;
-        this.suggestionProviders = suggestionProviders;
+    public FieldsEditorTab(EntryEditorInfo editorInfo) {
+        info = editorInfo;
+        databaseContext = editorInfo.getDatabaseContext();
+        suggestionProviders = editorInfo.getSuggestionProviders();
+    }
+
+    public void setCompressed(boolean compressed) {
+        isCompressed = compressed;
     }
 
     private static void addColumn(GridPane gridPane, int columnIndex, List<Label> nodes) {
@@ -69,7 +77,7 @@ abstract class FieldsEditorTab extends EntryEditorTab {
         List<Label> labels = new ArrayList<>();
 
         EntryType entryType = EntryTypes.getTypeOrDefault(entry.getType(), databaseContext.getMode());
-        List<String> fields = determineFieldsToShow(entry, entryType);
+        List<String> fields = determineFieldsToShow(entryType);
         for (String fieldName : fields) {
             FieldEditorFX fieldEditor = FieldEditors.getForField(fieldName, Globals.TASK_EXECUTOR, new FXDialogService(),
                     Globals.journalAbbreviationLoader, Globals.prefs.getJournalAbbreviationPreferences(), Globals.prefs,
@@ -98,7 +106,7 @@ abstract class FieldsEditorTab extends EntryEditorTab {
         columnDoNotContract.setMinWidth(Region.USE_PREF_SIZE);
         int rows;
         if (compressed) {
-            rows = (int) Math.ceil((double) fields.size() / 2);
+            rows = (int) Math.ceil((double) fields.size() / 2.0);
 
             addColumn(gridPane, 0, labels.subList(0, rows));
             addColumn(gridPane, 3, labels.subList(rows, labels.size()));
@@ -130,8 +138,8 @@ abstract class FieldsEditorTab extends EntryEditorTab {
 
         // Warp everything in a scroll-pane
         ScrollPane scrollPane = new ScrollPane();
-        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scrollPane.setHbarPolicy(ScrollBarPolicy.NEVER);
+        scrollPane.setVbarPolicy(ScrollBarPolicy.AS_NEEDED);
         scrollPane.setContent(gridPane);
         scrollPane.setFitToWidth(true);
         scrollPane.setFitToHeight(true);
@@ -145,9 +153,9 @@ abstract class FieldsEditorTab extends EntryEditorTab {
             rowExpand.setVgrow(Priority.ALWAYS);
             rowExpand.setValignment(VPos.TOP);
             if (rows == 0) {
-                rowExpand.setPercentHeight(100);
+                rowExpand.setPercentHeight(100.0);
             } else {
-                rowExpand.setPercentHeight(100 / rows * editors.get(field).getWeight());
+                rowExpand.setPercentHeight(100.0 / rows * editors.get(field).getWeight());
             }
             constraints.add(rowExpand);
         }
@@ -159,9 +167,9 @@ abstract class FieldsEditorTab extends EntryEditorTab {
         rowExpand.setVgrow(Priority.ALWAYS);
         rowExpand.setValignment(VPos.TOP);
         if (rows == 0) {
-            rowExpand.setPercentHeight(100);
+            rowExpand.setPercentHeight(100.0);
         } else {
-            rowExpand.setPercentHeight(100 / rows);
+            rowExpand.setPercentHeight((100.0 / rows));
         }
         for (int i = 0; i < rows; i++) {
             gridPane.getRowConstraints().add(rowExpand);
@@ -202,9 +210,14 @@ abstract class FieldsEditorTab extends EntryEditorTab {
     }
 
     @Override
-    public boolean shouldShow(BibEntry entry) {
-        EntryType entryType = EntryTypes.getTypeOrDefault(entry.getType(), databaseContext.getMode());
-        return !determineFieldsToShow(entry, entryType).isEmpty();
+    public boolean shouldShow() {
+        BibEntry newEntry = info.getEntry();
+        BibDatabaseMode databaseMode = info.getDatabaseMode();
+        if (newEntry == null || databaseMode == null) {
+            return false;
+        }
+        EntryType entryType = EntryTypes.getTypeOrDefault(newEntry.getType(), databaseMode);
+        return !determineFieldsToShow(entryType).isEmpty();
     }
 
     @Override
@@ -215,10 +228,11 @@ abstract class FieldsEditorTab extends EntryEditorTab {
     }
 
     @Override
-    protected void bindToEntry(BibEntry entry) {
-        Region panel = setupPanel(entry, isCompressed, suggestionProviders);
+    protected void bindToEntry() {
+        currentEntry = info.getEntry();
+        Region panel = setupPanel(currentEntry, isCompressed, suggestionProviders);
         setContent(panel);
     }
 
-    protected abstract List<String> determineFieldsToShow(BibEntry entry, EntryType entryType);
+    protected abstract List<String> determineFieldsToShow(EntryType entryType);
 }

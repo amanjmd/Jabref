@@ -6,17 +6,16 @@ import org.jabref.model.entry.BibEntry;
 
 public abstract class EntryEditorTab extends Tab {
 
-    protected BibEntry currentEntry;
 
     /**
      * Decide whether to show this tab for the given entry.
      */
-    public abstract boolean shouldShow(BibEntry entry);
+    public abstract boolean shouldShow();
 
     /**
      * Updates the view with the contents of the given entry.
      */
-    protected abstract void bindToEntry(BibEntry entry);
+    protected abstract void bindToEntry();
 
     /**
      * The tab just got the focus. Override this method if you want to perform a special action on focus (like selecting
@@ -29,11 +28,8 @@ public abstract class EntryEditorTab extends Tab {
     /**
      * Notifies the tab that it got focus and should display the given entry.
      */
-    public void notifyAboutFocus(BibEntry entry) {
-        if (!entry.equals(currentEntry)) {
-            currentEntry = entry;
-            bindToEntry(entry);
-        }
+    void notifyAboutFocus() {
+        bindToEntry();
         handleFocus();
     }
 }

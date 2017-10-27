@@ -13,7 +13,11 @@ import org.jabref.model.entry.identifier.MathSciNetId;
 
 public class MathSciNetTab extends EntryEditorTab {
 
-    public MathSciNetTab() {
+    private final EntryEditorInfo info;
+
+    public MathSciNetTab(EntryEditorInfo info)
+    {
+        this.info = info;
         setText(Localization.lang("MathSciNet Review"));
     }
 
@@ -47,12 +51,17 @@ public class MathSciNetTab extends EntryEditorTab {
     }
 
     @Override
-    public boolean shouldShow(BibEntry entry) {
-        return getMathSciNetId(entry).isPresent();
+    public boolean shouldShow()
+    {
+        BibEntry entry = info.getEntry();
+        return entry != null && getMathSciNetId(entry).isPresent();
     }
 
     @Override
-    protected void bindToEntry(BibEntry entry) {
-        setContent(getPane(entry));
+    protected void bindToEntry() {
+        BibEntry entry = info.getEntry();
+        if (entry != null) {
+            setContent(getPane(entry));
+        }
     }
 }

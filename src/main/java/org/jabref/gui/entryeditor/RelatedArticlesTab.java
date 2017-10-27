@@ -20,12 +20,13 @@ import org.jabref.preferences.JabRefPreferences;
 
 public class RelatedArticlesTab extends EntryEditorTab {
 
-    private final JabRefPreferences preferences;
+    private final JabRefPreferences preferences = Globals.prefs;
+    private final EntryEditorInfo info;
 
-    public RelatedArticlesTab(JabRefPreferences preferences) {
+    RelatedArticlesTab(EntryEditorInfo editorInfo) {
+        info = editorInfo;
         setText(Localization.lang("Related articles"));
         setTooltip(new Tooltip(Localization.lang("Related articles")));
-        this.preferences = preferences;
     }
 
     private StackPane getPane(BibEntry entry) {
@@ -80,12 +81,12 @@ public class RelatedArticlesTab extends EntryEditorTab {
     }
 
     @Override
-    public boolean shouldShow(BibEntry entry) {
+    public boolean shouldShow() {
         return preferences.getBoolean(JabRefPreferences.SHOW_RECOMMENDATIONS);
     }
 
     @Override
-    protected void bindToEntry(BibEntry entry) {
-        setContent(getPane(entry));
+    protected void bindToEntry() {
+        setContent(getPane(info.getEntry()));
     }
 }
