@@ -38,8 +38,9 @@ We refer to [GitHub issues](https://github.com/JabRef/jabref/issues) by using `#
  - We fixed an issue where editing in the source tab would override content of other entries [#3352](https://github.com/JabRef/jabref/issues/3352#issue-268580818)
  - We fixed several issues with the automatic linking of files in the entry editor where files were not found or not correctly saved in the bibtex source [#3346](https://github.com/JabRef/jabref/issues/3346)
  - We fixed an issue where fetching entries from crossref that had no titles caused an error [#3376](https://github.com/JabRef/jabref/issues/3376)
+ - We fixed an issue where editing in the source tab would override content of other entries [#3352](https://github.com/JabRef/jabref/issues/3352#issue-268580818)
 
- ### Removed
+### Removed
 
 
 
