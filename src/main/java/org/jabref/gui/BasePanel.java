@@ -1510,9 +1510,6 @@ public class BasePanel extends JPanel implements ClipboardOwner {
                     splitPane.getHeight() - splitPane.getDividerLocation());
         }
         mode = BasePanelMode.SHOWING_EDITOR;
-        if (currentEditor != null) {
-            currentEditor.setMovingToDifferentEntry();
-        }
         currentEditor = editor;
         splitPane.setBottomComponent(editor);
         if (editor.getEntry() != getShowing()) {

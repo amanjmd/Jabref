@@ -152,10 +152,6 @@ public class EntryEditor extends JPanel implements EntryEditorInfo {
     private final JFXPanel container;
     private final List<EntryEditorTab> tabs;
 
-    /**
-     * Indicates that we are about to go to the next or previous entry
-     */
-    private final BooleanProperty movingToDifferentEntry = new SimpleBooleanProperty();
     private EntryType entryType;
     private SourceTab sourceTab;
     private TypeLabel typeLabel;
@@ -195,12 +191,15 @@ public class EntryEditor extends JPanel implements EntryEditorInfo {
     }
 
 
-    public void setEntry(BibEntry entry) {
-        this.entry = Objects.requireNonNull(entry);
-        entry.registerListener(this);
-        entryType = EntryTypes.getTypeOrDefault(entry.getType(), frame.getCurrentBasePanel().getBibDatabaseContext().getMode());
+    public void setEntry(BibEntry newEntry) {
+        if (entry != null) {
+            unregisterListeners();
+        }
+        entry = Objects.requireNonNull(newEntry);
+        newEntry.registerListener(this);
+        entryType = EntryTypes.getTypeOrDefault(newEntry.getType(), frame.getCurrentBasePanel().getBibDatabaseContext().getMode());
 
-        displayedBibEntryType = entry.getType();
+        displayedBibEntryType = newEntry.getType();
 
         DefaultTaskExecutor.runInJavaFXThread(() -> {
             recalculateVisibleTabs();
@@ -213,7 +212,7 @@ public class EntryEditor extends JPanel implements EntryEditorInfo {
             selectedTab.notifyAboutFocus();
         });
 
-        TypedBibEntry typedEntry = new TypedBibEntry(entry, panel.getBibDatabaseContext().getMode());
+        TypedBibEntry typedEntry = new TypedBibEntry(newEntry, panel.getBibDatabaseContext().getMode());
         typeLabel.setText(typedEntry.getTypeForDisplay());
     }
 
@@ -258,11 +257,6 @@ public class EntryEditor extends JPanel implements EntryEditorInfo {
                         case ENTRY_EDITOR_PREVIOUS_PANEL:
                         case ENTRY_EDITOR_PREVIOUS_PANEL_2:
                             e.consume();
-                            break;
-                        case SAVE_ALL:
-                        case SAVE_DATABASE:
-                        case SAVE_DATABASE_AS:
-                            sourceTab.saveCurrentSource();
                             break;
                         default:
                             //do nothing
@@ -556,11 +550,6 @@ public class EntryEditor extends JPanel implements EntryEditorInfo {
         }
     }
 
-    public void setMovingToDifferentEntry() {
-        movingToDifferentEntry.set(true);
-        unregisterListeners();
-    }
-
     private void unregisterListeners() {
         this.entry.unregisterListener(this);
         removeSearchListeners();
@@ -672,163 +661,6 @@ public class EntryEditor extends JPanel implements EntryEditorInfo {
             }
             entry.setField(cleanedEntries);
             panel.entryEditorClosing(EntryEditor.this);
-        }
-    }
-
-    public class StoreFieldAction extends AbstractAction {
-
-        public StoreFieldAction() {
-            super("Store field value");
-            putValue(Action.SHORT_DESCRIPTION, "Store field value");
-        }
-
-        @Override
-        public void actionPerformed(ActionEvent event) {
-            boolean movingAway = movingToDifferentEntry.get();
-            movingToDifferentEntry.set(false);
-
-            if (event.getSource() instanceof TextField) {
-                // Storage from bibtex key field.
-                TextField textField = (TextField) event.getSource();
-                String oldValue = entry.getCiteKeyOptional().orElse(null);
-                String newValue = textField.getText();
-
-                if (newValue.isEmpty()) {
-                    newValue = null;
-                }
-
-                if (((oldValue == null) && (newValue == null)) || (Objects.equals(oldValue, newValue))) {
-                    return; // No change.
-                }
-
-                // Make sure the key is legal:
-                String cleaned = BibtexKeyPatternUtil.checkLegalKey(newValue,
-                        Globals.prefs.getBoolean(JabRefPreferences.ENFORCE_LEGAL_BIBTEX_KEY));
-                if ((cleaned == null) || cleaned.equals(newValue)) {
-                    textField.setValidBackgroundColor();
-                } else {
-                    textField.setInvalidBackgroundColor();
-                    if (!SwingUtilities.isEventDispatchThread()) {
-                        JOptionPane.showMessageDialog(frame, Localization.lang("Invalid BibTeX key"),
-                                Localization.lang("Error setting field"), JOptionPane.ERROR_MESSAGE);
-                        requestFocus();
-                    }
-                    return;
-                }
-
-                if (newValue == null) {
-                    entry.clearCiteKey();
-                    warnEmptyBibtexkey();
-                } else {
-                    entry.setCiteKey(newValue);
-                    boolean isDuplicate = panel.getDatabase().getDuplicationChecker().isDuplicateCiteKeyExisting(entry);
-                    if (isDuplicate) {
-                        warnDuplicateBibtexkey();
-                    } else {
-                        panel.output(Localization.lang("BibTeX key is unique."));
-                    }
-                }
-
-                // Add an UndoableKeyChange to the baseframe's undoManager.
-                UndoableKeyChange undoableKeyChange = new UndoableKeyChange(entry, oldValue, newValue);
-                updateTimestamp(undoableKeyChange);
-
-                textField.setValidBackgroundColor();
-
-                if (textField.hasFocus()) {
-                    textField.setActiveBackgroundColor();
-                }
-
-                panel.markBaseChanged();
-            } else if (event.getSource() instanceof FieldEditor) {
-                String toSet = null;
-                FieldEditor fieldEditor = (FieldEditor) event.getSource();
-                boolean set;
-                // Trim the whitespace off this value
-                String currentText = fieldEditor.getText().trim();
-                if (!currentText.isEmpty()) {
-                    toSet = currentText;
-                }
-
-                // We check if the field has changed, since we don't want to
-                // mark the base as changed unless we have a real change.
-                if (toSet == null) {
-                    set = entry.hasField(fieldEditor.getFieldName());
-                } else {
-                    set = !((entry.hasField(fieldEditor.getFieldName()))
-                            && toSet.equals(entry.getField(fieldEditor.getFieldName()).orElse(null)));
-                }
-
-                if (!set) {
-                    // We set the field and label color.
-                    fieldEditor.setValidBackgroundColor();
-                } else {
-                    try {
-                        // The following statement attempts to write the new contents into a StringWriter, and this will
-                        // cause an IOException if the field is not properly formatted. If that happens, the field
-                        // is not stored and the textarea turns red.
-                        if (toSet != null) {
-                            new LatexFieldFormatter(Globals.prefs.getLatexFieldFormatterPreferences()).format(toSet,
-                                    fieldEditor.getFieldName());
-                        }
-
-                        String oldValue = entry.getField(fieldEditor.getFieldName()).orElse(null);
-
-                        if (toSet == null) {
-                            entry.clearField(fieldEditor.getFieldName());
-                        } else {
-                            entry.setField(fieldEditor.getFieldName(), toSet);
-                        }
-
-                        fieldEditor.setValidBackgroundColor();
-
-                        //TODO: See if we need to update an AutoCompleter instance:
-                        /*
-                        AutoCompleter<String> aComp = panel.getSuggestionProviders().get(fieldEditor.getName());
-                        if (aComp != null) {
-                            aComp.addBibtexEntry(entry);
-                        }
-                        */
-
-                        // Add an UndoableFieldChange to the baseframe's undoManager.
-                        UndoableFieldChange undoableFieldChange = new UndoableFieldChange(entry,
-                                fieldEditor.getFieldName(), oldValue, toSet);
-                        updateTimestamp(undoableFieldChange);
-
-                        panel.markBaseChanged();
-                    } catch (InvalidFieldValueException ex) {
-                        fieldEditor.setInvalidBackgroundColor();
-                        if (!SwingUtilities.isEventDispatchThread()) {
-                            JOptionPane.showMessageDialog(frame, Localization.lang("Error") + ": " + ex.getMessage(),
-                                    Localization.lang("Error setting field"), JOptionPane.ERROR_MESSAGE);
-                            LOGGER.debug("Error setting field", ex);
-                            requestFocus();
-                        }
-                    }
-                }
-                if (fieldEditor.hasFocus()) {
-                    fieldEditor.setBackground(GUIGlobals.ACTIVE_EDITOR_COLOR);
-                }
-            }
-
-            // Make sure we scroll to the entry if it moved in the table.
-            // Should only be done if this editor is currently showing:
-            // don't select the current entry again (eg use BasePanel#highlightEntry} in case another entry was selected)
-            if (!movingAway && isShowing()) {
-                SwingUtilities.invokeLater(() -> panel.getMainTable().ensureVisible(entry));
-            }
-        }
-
-        private void updateTimestamp(UndoableEdit undoableEdit) {
-            if (Globals.prefs.getTimestampPreferences().includeTimestamps()) {
-                NamedCompound compound = new NamedCompound(undoableEdit.getPresentationName());
-                compound.addEdit(undoableEdit);
-                UpdateField.updateField(entry, Globals.prefs.getTimestampPreferences().getTimestampField(), Globals.prefs.getTimestampPreferences().now()).ifPresent(fieldChange -> compound.addEdit(new UndoableFieldChange(fieldChange)));
-                compound.end();
-                panel.getUndoManager().addEdit(compound);
-            } else {
-                panel.getUndoManager().addEdit(undoableEdit);
-            }
         }
     }
 

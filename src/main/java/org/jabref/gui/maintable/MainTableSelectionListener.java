@@ -52,8 +52,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
- * List event, mouse, key and focus listener for the main table that makes up the
- * most part of the BasePanel for a single BIB database.
+ * List event, mouse, key and focus listener for the main table that makes up the most part of the BasePanel for a
+ * single BIB database.
  */
 public class MainTableSelectionListener implements ListEventListener<BibEntry>, MouseListener, KeyListener, FocusListener {
     private static final Log LOGGER = LogFactory.getLog(MainTableSelectionListener.class);
@@ -129,9 +129,6 @@ public class MainTableSelectionListener implements ListEventListener<BibEntry>, 
                     }
                     panel.showEntryEditor(newEditor);
                     SwingUtilities.invokeLater(() -> table.ensureVisible(table.getSelectedRow()));
-                } else {
-                    // if not used destroy the EntryEditor
-                    newEditor.setMovingToDifferentEntry();
                 }
             } else {
                 // Either nothing or a preview was shown. Update the preview.
@@ -313,10 +310,10 @@ public class MainTableSelectionListener implements ListEventListener<BibEntry>, 
     }
 
     /**
-     * Method to handle a single left click on one the special fields (e.g., ranking, quality, ...)
-     * Shows either a popup to select/clear a value or simply toggles the functionality to set/unset the special field
+     * Method to handle a single left click on one the special fields (e.g., ranking, quality, ...) Shows either a popup
+     * to select/clear a value or simply toggles the functionality to set/unset the special field
      *
-     * @param e MouseEvent used to determine the position of the popups
+     * @param e          MouseEvent used to determine the position of the popups
      * @param columnName the name of the specialfield column
      */
     private void handleSpecialFieldLeftClick(MouseEvent e, String columnName) {
@@ -338,9 +335,10 @@ public class MainTableSelectionListener implements ListEventListener<BibEntry>, 
     }
 
     /**
-     * Process general right-click events on the table. Show the table context menu at
-     * the position where the user right-clicked.
-     * @param e The mouse event defining the popup trigger.
+     * Process general right-click events on the table. Show the table context menu at the position where the user
+     * right-clicked.
+     *
+     * @param e   The mouse event defining the popup trigger.
      * @param row The row where the event occurred.
      */
     private void processPopupTrigger(MouseEvent e, int row) {
@@ -357,8 +355,8 @@ public class MainTableSelectionListener implements ListEventListener<BibEntry>, 
      * external resource to open for the entry. If no relevant external resources exist, let the normal popup trigger
      * handler do its thing instead.
      *
-     * @param e The mouse event defining this popup trigger.
-     * @param row The row where the event occurred.
+     * @param e      The mouse event defining this popup trigger.
+     * @param row    The row where the event occurred.
      * @param column the MainTableColumn associated with this table cell.
      */
     private void showIconRightClickMenu(MouseEvent e, int row, MainTableColumn column) {
@@ -477,9 +475,9 @@ public class MainTableSelectionListener implements ListEventListener<BibEntry>, 
     }
 
     /**
-     * Receive key event on the main table. If the key is a letter or a digit,
-     * we should select the first entry in the table which starts with the given
-     * letter in the column by which the table is sorted.
+     * Receive key event on the main table. If the key is a letter or a digit, we should select the first entry in the
+     * table which starts with the given letter in the column by which the table is sorted.
+     *
      * @param e The KeyEvent
      */
     @Override
@@ -527,7 +525,6 @@ public class MainTableSelectionListener implements ListEventListener<BibEntry>, 
                     }
                 }
             }
-
         } else if (e.getKeyChar() == KeyEvent.VK_ESCAPE) {
             lastPressedCount = 0;
         }

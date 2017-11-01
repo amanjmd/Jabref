@@ -8,6 +8,7 @@ import java.util.Objects;
 
 import javax.swing.undo.UndoManager;
 
+import javafx.application.Platform;
 import javafx.scene.Node;
 import javafx.scene.control.Tooltip;
 
@@ -26,6 +27,7 @@ import org.jabref.logic.bibtex.LatexFieldFormatter;
 import org.jabref.logic.importer.ParserResult;
 import org.jabref.logic.importer.fileformat.BibtexParser;
 import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.layout.format.Default;
 import org.jabref.model.database.BibDatabase;
 import org.jabref.model.database.BibDatabaseMode;
 import org.jabref.model.entry.BibEntry;
@@ -50,7 +52,7 @@ public class SourceTab extends EntryEditorTab {
     private final EntryEditorInfo info;
     private BibEntry currentEntry;
 
-    public SourceTab(EntryEditorInfo editorInfo) {
+    SourceTab(EntryEditorInfo editorInfo) {
         info = editorInfo;
         panel = editorInfo.getBasePanel();
         mode = editorInfo.getDatabaseMode();
@@ -88,13 +90,6 @@ public class SourceTab extends EntryEditorTab {
         codeArea.setWrapText(true);
         codeArea.lookup(".styled-text-area").setStyle(
                 "-fx-font-size: " + Globals.prefs.getFontSizeFX() + "pt;");
-        // store source if new tab is selected (if this one is not focused anymore)
-        EasyBind.subscribe(codeArea.focusedProperty(), focused -> {
-            if (!focused) {
-                storeSource();
-            }
-        });
-
         try {
             String srcString = getSourceString(currentEntry, mode);
             codeArea.appendText(srcString);
@@ -111,7 +106,7 @@ public class SourceTab extends EntryEditorTab {
                 panel.markBaseChanged();
             }
         });
-
+        codeArea.setEditable(false);
         return new VirtualizedScrollPane<>(codeArea);
     }
 
@@ -128,19 +123,13 @@ public class SourceTab extends EntryEditorTab {
         }
     }
 
-    void saveCurrentSource() {
-        // store source if new entry is selected in the maintable and the source tab is focused
-        if (codeArea != null && codeArea.focusedProperty().get()) {
-            BibEntry entry = currentEntry;
-            String text = codeArea.getText();
-            DefaultTaskExecutor.runInJavaFXThread(()->storeSource(entry, text));
-        }
-    }
-
     @Override
     protected void bindToEntry() {
-        saveCurrentSource();
+        if (currentEntry != null) {
+            currentEntry.unregisterListener(this);
+        }
         currentEntry = info.getEntry();
+        currentEntry.registerListener(this);
         if (codeArea != null) {
             updateSourcePane();
         } else {
@@ -149,9 +138,16 @@ public class SourceTab extends EntryEditorTab {
     }
 
 
-    private void storeSource() {
-        if(currentEntry != null && codeArea != null)
-        storeSource(currentEntry, codeArea.getText() );
+    @Subscribe
+    public synchronized void listen(FieldAddedOrRemovedEvent event) {
+        // Rebuild entry editor based on new information (e.g. hide/add tabs)
+        DefaultTaskExecutor.runInJavaFXThread(this::updateSourcePane);
+    }
+
+    @Subscribe
+    public synchronized void listen(FieldChangedEvent event) {
+        // Rebuild entry editor based on new information (e.g. hide/add tabs)
+        DefaultTaskExecutor.runInJavaFXThread(this::updateSourcePane);
     }
 
     private void storeSource(BibEntry changedEntry, String entryText) {
